@@ -80,6 +80,7 @@ class automation(object):
 			rdata=None,
 			execonwait=False,
 			decorator=None,
+			ichild = None
 		):
 		"""
 		Create a rule object
@@ -91,13 +92,25 @@ class automation(object):
 			escapecontext : pattern to match to execute and detroy a context. generic pattern coming from the configuration
 			escapeout: output to return if the escapecontext pattern match
 			rdata : arbitrary data returned to the callback
-			execonwait: callback will be executed with out
+			execonwait: callback will be executed
 			decorator: decorator to used between parent pattern and child pattern. Eg Turnon the light of. deco : the, of
+			ichild = implicit child rule to add if childs is empty, execonwait is turn on
 		"""
 		rule = {}
 		if id != None : rule['id'] = id
 		rule['pattern'] = pattern
 		rule['out'] = out
+		if len(childs) != 0 and ichild != None:
+			i = 0
+			for c in childs:
+				if len(c['childs']) == 0:
+					print 'add implicit child to ' + str(childs[i])
+					childs[i]['childs'] = [ichild]
+					childs[i]['execonwait'] = True
+				i = i+1
+		print "================="
+		print childs
+		print "==============="
 		rule['childs'] = childs
 		rule['waitchild'] = waitchild
 		rule['keepcontext'] = keepcontext
@@ -141,11 +154,15 @@ class automation(object):
 			except:
 				traceback.print_exc()
 				return False
-
+		print '--------------------'
+		print rule
+		print '--------------------'
 		return rule
 
 	def format_out(self, data, m):
 		out = data['out']
+		if type(out) != type(''):
+			return out
 		for j in re.findall('\(:([\w]+):\)', out):
                         if j in data:
                                 out = out.replace('(:%s:)' % j, data[j])
@@ -169,12 +186,17 @@ class automation(object):
 					if rule['waitchild'] == False:
 						order = m.group('sub').strip()
 						if order == '':
-							return (data['out'], self.create_context(rule, data))
+							if rule['execonwait']: 
+#								cid = self.create_context(rule, data)
+								return (self.callback(data, m, rule['rdata']), None)
+							else:
+								return (data['out'], self.create_context(rule, data))
 
 						c = self.match(order, rule['childs'], data=data)
 						if c != False:
 							return c
 						else:
+							self.debug('__HERE__')
 							cid = self.create_context(rule, data)
 							if rule['execonwait']: 
 								return (self.callback(data, m, rule['rdata']), cid)
