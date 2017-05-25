@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>LiteAutomation</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<style>
+		body {
+			background-color: #272b30;
+		}
+		#panel {
+			margin-top: 50px;
+			margin-left: auto;
+			margin-right: auto;
+			border : 1px solid black;
+			max-width: 800px;
+			font-size: 14px;
+		}
+		#panel-header {
+			border-top-right-radius: 3px;
+			border-top-left-radius: 3px;
+			background-color: #3e444c;
+			padding: 5px;
+			height: 40px;
+			color: #c8c8c8;
+			text-align: center;
+			vertical-align: middle;
+			font-size: 20px;
+		}
+		#panel-log {
+			padding: 15px;
+			overflow-y: auto;
+			height: 300px;
+			font-family : monospace;
+			background-color: #272b30;
+		}
+		#panel-footer {
+			background-color: #3e444c;
+			padding: 5px;
+			overflow: auto;
+			border-top: 1px solid rgba(0,0,0,0.6);
+			border-bottom-right-radius: 3px;
+			border-bottom-left-radius: 3px;
+		}
+		#panel-log ul {
+			list-style-type: none;
+			padding-left: 0px;
+			color: #c8c8c8;
+		}
+		span.me {
+			color: magenta;
+		}
+		span.you {
+			color: dodgerblue;
+		}
+		li.error {
+			color: red;
+		}
+		span.unrecognized {
+			color: red;
+		}
+
+
+	</style>
+</head>
+<body>
+<div id="panel">
+	<div id="panel-header">
+		Automation
+	</div>
+	<div id="panel-log">
+		<ul id="log-entries">
+			<li><span class="me">Me: </span> Hi!</li>
+		</ul>
+	</div>
+	<div id="panel-footer">
+	<div class="col-xs-12">
+		<form id="order">
+		<div class="input-group">
+			<span class="input-group-btn">
+				<button type="button" class="btn btn-default" onClick="startDictation()"><span class="fa fa-microphone"></span></button>
+			</span>
+			<input class="form-control" id="order_input" type="text" placeholder="Type something..." value="">
+			<span class="input-group-btn">
+				<button type="submit" class="btn btn-success"><span class="glyphicon glyphicon-send"></span></button>
+			</span>
+		</div>
+		</form>
+	</div>
+</div>
+<script type="text/javascript">
+	function startDictation() {
+		if (window.hasOwnProperty('webkitSpeechRecognition')) {
+			var recognition = new webkitSpeechRecognition();
+			recognition.continuous = false;
+			recognition.interimResults = false;
+			recognition.lang = "fr-FR";
+			recognition.start();
+			recognition.onresult = function(e) {
+			order = e.results[0][0].transcript
+				$('#order_input').val(order)
+				$('#order').submit()
+				recognition.stop();
+			};
+			recognition.onerror = function(e) {
+				recognition.stop();
+			}
+		}
+	}
+	var cid = '';
+	panel_log = $('#panel-log');
+	$('#order').submit(function() {
+		oe = $('#order_input');
+		le = $('#log-entries');
+		order = oe.val()
+		if (order == '') return false;
+		le.append('<li><span class="you">You: </span>'+order+'</li>');	
+		oe.val('');
+		$.getJSON('/?q='+order+'&cid='+cid, function(data) {
+			console.log(data);
+			cid = ( 'cid' in data ) ? data['cid'] : '';
+			c = (data['state']) ? '' : 'class="unrecognized"';
+			le.append('<li><span class="me">Me: </span><span '+c+'>'+data['out']+'</span></li>');	
+		})
+		.fail(function() { 
+			le.append('<li class="error"><span>Me: </span>Server unavailable</li>');	
+		})
+		panel_log.scrollTop(panel_log[0].scrollHeight);
+		return false;
+	});
+</script>
+</body>
+</html>
