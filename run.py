@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from automation import *
 
 def execute(_a, order, cid=None):

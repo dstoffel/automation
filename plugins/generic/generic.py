@@ -10,7 +10,6 @@ class generic(automation):
 
 	def callback(self, data, m, rdata):
 		action = data['out']
-		print data
 		if rdata != None and 'shell' in rdata and rdata['shell']:
 			self.log('Executing "%s"' % action)
 			p = subprocess.Popen([action], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)

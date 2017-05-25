@@ -27,6 +27,7 @@ class automation(object):
 #		self.logfile.write(logline+"\n")
 #		self.logfile.flush()
 		print logline
+		sys.stdout.flush()
 
 	def strip_accents(self, string):
 		za = ['é', 'è', 'ê', 'à', 'ù', 'û', 'ç', 'ô', 'î', 'ï', 'â']
