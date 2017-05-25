@@ -11,3 +11,6 @@
 	sudo update-rc.d automation defaults
 ## start
 sudo /etc/init.d/automation start
+
+## Log
+tail -f /var/log/automation.log
