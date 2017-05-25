@@ -80,7 +80,6 @@ class automation(object):
 			rdata=None,
 			execonwait=False,
 			decorator=None,
-			ichild = None
 		):
 		"""
 		Create a rule object
@@ -94,23 +93,11 @@ class automation(object):
 			rdata : arbitrary data returned to the callback
 			execonwait: callback will be executed
 			decorator: decorator to used between parent pattern and child pattern. Eg Turnon the light of. deco : the, of
-			ichild = implicit child rule to add if childs is empty, execonwait is turn on
 		"""
 		rule = {}
 		if id != None : rule['id'] = id
 		rule['pattern'] = pattern
 		rule['out'] = out
-		if len(childs) != 0 and ichild != None:
-			i = 0
-			for c in childs:
-				if len(c['childs']) == 0:
-					print 'add implicit child to ' + str(childs[i])
-					childs[i]['childs'] = [ichild]
-					childs[i]['execonwait'] = True
-				i = i+1
-		print "================="
-		print childs
-		print "==============="
 		rule['childs'] = childs
 		rule['waitchild'] = waitchild
 		rule['keepcontext'] = keepcontext
@@ -154,9 +141,6 @@ class automation(object):
 			except:
 				traceback.print_exc()
 				return False
-		print '--------------------'
-		print rule
-		print '--------------------'
 		return rule
 
 	def format_out(self, data, m):

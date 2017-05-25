@@ -3,7 +3,7 @@
 ## installation
 	git clone https://github.com/dstoffel/automation.git
 	cd automation
-	cp config.py.sampe config.py
+	cp config.py.sample config.py
 	sudo cp initscript /etc/init.d/automation
 	sudo sed -i "s/_RUNAS_/$(whoami)/" /etc/init.d/automation
 	sudo sed -i "s/_FOLDER_/$(pwd | sed 's/\//\\\//g')/" /etc/init.d/automation
