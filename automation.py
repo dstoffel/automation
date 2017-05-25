@@ -1,4 +1,3 @@
-#!usr/bin/python
 # -*- coding: utf-8 -*-
 import os,sys, time, re, urlparse,traceback,pprint,random,json, BaseHTTPServer
 import requests
