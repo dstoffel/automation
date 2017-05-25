@@ -70,7 +70,7 @@ class automation(object):
 	@classmethod
 	def Rule(	self,
 			id=None,
-			pattern=None,
+			pattern='',
 			out=None,
 			waitchild=False,
 			childs=[],
@@ -80,6 +80,8 @@ class automation(object):
 			rdata=None,
 			execonwait=False,
 			decorator=None,
+			confirm=False,
+			confirmout='confirm?',
 		):
 		"""
 		Create a rule object
@@ -93,6 +95,8 @@ class automation(object):
 			rdata : arbitrary data returned to the callback
 			execonwait: callback will be executed
 			decorator: decorator to used between parent pattern and child pattern. Eg Turnon the light of. deco : the, of
+			confirm : confirm before calling callback
+			confirmout : output for confirmation.  will be formated. (:__ID__:) or (x) replaced
 		"""
 		rule = {}
 		if id != None : rule['id'] = id
@@ -105,6 +109,8 @@ class automation(object):
 		rule['escapeout'] = escapeout
 		rule['rdata'] = rdata
 		rule['execonwait'] = execonwait
+		rule['confirm'] = confirm
+		rule['confirmout'] = confirmout
 		if decorator==None:
 			decorator=['du','le','la','les','de la']
 		if len(decorator) != 0:
@@ -131,7 +137,7 @@ class automation(object):
                         traceback.print_exc()
                         return False
 
-		if len(childs) != 0 and keepcontext:
+		if keepcontext:
 			if escapecontext == False:
 				escapecontext = '(abandonne|oublie|tais toi|tg|ta gueule|arrete)'
 				rule['escapeout'] = 'jarrete'
@@ -143,8 +149,7 @@ class automation(object):
 				return False
 		return rule
 
-	def format_out(self, data, m):
-		out = data['out']
+	def format_out(self,out, data, m):
 		if type(out) != type(''):
 			return out
 		for j in re.findall('\(:([\w]+):\)', out):
@@ -165,13 +170,12 @@ class automation(object):
 				self.debug('pattern %s MATCHED' % rule['pattern'])
 				if 'id' in rule:
 					data[rule['id']] = m.group(rule['id'])
-				data['out'] = self.format_out(data, m)
+				data['out'] = self.format_out(data['out'],data, m)
 				if len(rule['childs']) != 0:
 					if rule['waitchild'] == False:
 						order = m.group('sub').strip()
 						if order == '':
 							if rule['execonwait']: 
-#								cid = self.create_context(rule, data)
 								return (self.callback(data, m, rule['rdata']), None)
 							else:
 								return (data['out'], self.create_context(rule, data))
@@ -180,7 +184,6 @@ class automation(object):
 						if c != False:
 							return c
 						else:
-							self.debug('__HERE__')
 							cid = self.create_context(rule, data)
 							if rule['execonwait']: 
 								return (self.callback(data, m, rule['rdata']), cid)
@@ -193,7 +196,13 @@ class automation(object):
 						else:
 							return (data['out'], self.create_context(rule, data))
 				else:
-					return (self.callback(data,m, rule['rdata']), None)
+					if rule['confirm'] != False:
+						r = self.Rule(escapecontext= '.*', escapeout='ok stop', childs=[
+							self.Rule(pattern='oui', out=data['out'], rdata=rule['rdata'])
+						])
+						return(self.format_out(rule['confirmout'], data, m), self.create_context(r, data))
+					else:
+						return (self.callback(data,m, rule['rdata']), None)
 		return (False,None)
 
 

@@ -12,7 +12,7 @@ rules = [
 	Rule(pattern='envoi un mail', out='a qui?', childs=[
 		Rule(id="to", pattern='[a-zA-Z0-9\._-]+@[a-zA-Z0-9\._-]+', decorator=['a'], out='subjet?', childs=[
 			Rule(id="subject", pattern='.*', out='contenu?', waitchild=True, childs=[
-				Rule(id="content", pattern='.*', out='echo "(:content:)" | mail -s "(:subject:)" (:to:) && echo "c\'est parti"', rdata={'shell' : True})
+				Rule(id="content", confirm=True, confirmout='confirm, envoyer mail a (:to:)?',pattern='.*', out='echo "(:content:)" | mail -s "(:subject:)" (:to:) && echo "c\'est parti"', rdata={'shell' : True})
 			])
 		])
 	])
