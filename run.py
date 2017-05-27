@@ -1,5 +1,29 @@
 #!/usr/bin/env python
 from automation import *
+from os import system
+plays=[]
+interrupted=False
+import threading
+
+def _play(msg,w=False):
+	if config.play:
+		if w != False:
+			p = 'aplay -D %s -q %s' % (config.pcard, w)
+			system(p)
+		else:
+			p = 'aplay -D %s -q /tmp/out.wav' % config.pcard
+			system('/usr/bin/pico2wave -l fr-FR --wave /tmp/out.wav "'+msg+'" && '+p+' && rm /tmp/out.wav')
+
+def _l(s):
+	if config.play:
+		if s:
+			play('',w='resources/ding.wav')
+		else:
+			play('',w='resources/dong.wav')
+
+def play(m,w=False):
+	global plays
+	plays.append({'m':m, 'w':w})
 
 def execute(_a, order, cid=None):
         global _plugins
@@ -63,7 +87,6 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 					result = execute(_automation, urlparse.unquote(order))
 
                         if 'cid' not in qargs:
-				print result
 				clients[client] = result['cid']
 
                         output  = json.dumps(result)
@@ -77,6 +100,61 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
         s.send_header("Content-type", "text/html")
         s.end_headers()
         s.wfile.write(output)
+
+def player():
+	global plays, interrupted
+
+	if len(plays) == 0:
+		time.sleep(1)
+	else:
+		e = plays.pop(0)
+		_play(e['m'],e['w'])
+
+	if interrupted:
+		return
+	player()
+
+def callback_hotword(i=0,cid=None):
+	global _automation
+	if i==0:
+		_l(True)
+
+	r = sr.Recognizer()
+        with sr.Microphone() as source:
+		r.adjust_for_ambient_noise(source)
+                audio = r.listen(source)
+        try:
+		_automation.debug('Asking bing')
+                result = r.recognize_bing(audio, key=config.bingapi,language='fr-FR')
+		result = result.encode('utf-8')
+		_automation.debug('Received : %s' % result)
+		result = execute(_automation, str(result), cid)
+	        cid = result['cid']
+		play(result['out'])
+		if cid != '':
+			return callback_hotword(1,cid=cid)
+
+        except sr.UnknownValueError:
+		_automation.debug('Bing did not understand')
+		play("je n'ai pas compris")
+
+        except sr.RequestError as e:
+                print 'error %s ' % e
+	_l(False)
+	return
+
+def interrupt_callback():
+    global interrupted
+    return interrupted
+
+def rec():
+	global _automation
+        detector = snowboydecoder.HotwordDetector(config.snowmodel, sensitivity=0.5)
+	_automation.log('Starting listening')
+        detector.start(detected_callback=callback_hotword,
+		interrupt_check=interrupt_callback,
+              sleep_time=0.03)
+        detector.terminate()
 
 if __name__ == '__main__':
         _automation = automation()
@@ -105,12 +183,22 @@ if __name__ == '__main__':
 		_automation.log('Need at least one plugin, exiting')
 		sys.exit(1)
         _automation.log('Plugins loaded : %s ' % ', '.join(loaded))
+
+	if config.play  == True:
+		threading.Thread(target=player).start()
+
+	if config.record ==  True:
+		import snowboydecoder
+		import speech_recognition as sr
+		#r = sr.Recognizer()
+		threading.Thread(target=rec,).start()
         server_class = BaseHTTPServer.HTTPServer
         httpd = server_class((config.server_ip, config.server_port), HTTPHandler)
         _automation.log("Server Starts - %s:%s" % (config.server_ip, config.server_port))
         try:
                 httpd.serve_forever()
         except KeyboardInterrupt:
+		interrupted = True
                 pass
         httpd.server_close()
         _automation.log("Server Stops - %s:%s" % (config.server_ip, config.server_port))
