@@ -89,6 +89,8 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
                         if 'cid' not in qargs:
 				clients[client] = result['cid']
 
+			if config.play:
+				play(result['out'])
                         output  = json.dumps(result)
                         content_type = 'application/json'
                         _automation.debug('Returning ouput: %s' % output)

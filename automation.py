@@ -112,7 +112,7 @@ class automation(object):
 		rule['confirm'] = confirm
 		rule['confirmout'] = confirmout
 		if decorator==None:
-			decorator=['du','le','la','les','de la']
+			decorator=['de', 'du','le','la','les','de la']
 		if len(decorator) != 0:
 			prefix = '(?:'+'|'.join(decorator)+')*\s*'
 		else:
