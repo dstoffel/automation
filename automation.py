@@ -39,6 +39,9 @@ class automation(object):
 
 	def create_context(self, rule, data):
 		global contexts
+		if rule['context'] == False:
+			self.debug('context=False, do no registering')
+			return None
 		cid = self.get_context_id()
 		self.debug('Registering context %s' % cid)
 		self.contexts[cid] = {
@@ -82,6 +85,7 @@ class automation(object):
 			decorator=None,
 			confirm=False,
 			confirmout='confirm?',
+			context=True
 		):
 		"""
 		Create a rule object
@@ -97,6 +101,7 @@ class automation(object):
 			decorator: decorator to used between parent pattern and child pattern. Eg Turnon the light of. deco : the, of
 			confirm : confirm before calling callback
 			confirmout : output for confirmation.  will be formated. (:__ID__:) or (x) replaced
+			context : register a context
 		"""
 		rule = {}
 		if id != None : rule['id'] = id
@@ -111,8 +116,9 @@ class automation(object):
 		rule['execonwait'] = execonwait
 		rule['confirm'] = confirm
 		rule['confirmout'] = confirmout
+		rule['context'] = context
 		if decorator==None:
-			decorator=['de', 'du','le','la','les','de la']
+			decorator=['de', 'du','le','la','les','de la', 'celles? de la','celui du', 'ceux du','dans','dans le','dans la']
 		if len(decorator) != 0:
 			prefix = '(?:'+'|'.join(decorator)+')*\s*'
 		else:
@@ -168,9 +174,10 @@ class automation(object):
 			m = rule['p'].match(order)
 			if m:
 				self.debug('pattern %s MATCHED' % rule['pattern'])
+				data['out'] = self.format_out(data['out'],data, m)
 				if 'id' in rule:
 					data[rule['id']] = m.group(rule['id'])
-				data['out'] = self.format_out(data['out'],data, m)
+					data[rule['id']+'_out'] = data['out']
 				if len(rule['childs']) != 0:
 					if rule['waitchild'] == False:
 						order = m.group('sub').strip()
@@ -179,17 +186,16 @@ class automation(object):
 								return (self.callback(data, m, rule['rdata']), None)
 							else:
 								return (data['out'], self.create_context(rule, data))
-
-						c = self.match(order, rule['childs'], data=data)
+						c,i = self.match(order, rule['childs'], data=data)
 						if c != False:
-							return c
+							return (c,i)
 						else:
 							cid = self.create_context(rule, data)
 							if rule['execonwait']: 
 								return (self.callback(data, m, rule['rdata']), cid)
 
 							else:
-								return (data['out'], cid)
+								return (rule['out'], cid)
 					else:
 						if rule['execonwait']: 
 							return (self.callback(data, m, rule['rdata']), self.create_context(rule, data))
