@@ -118,7 +118,7 @@ class automation(object):
 		rule['confirmout'] = confirmout
 		rule['context'] = context
 		if decorator==None:
-			decorator=['de', 'du','le','la','les','de la', 'celles? de la','celui du', 'ceux du','dans','dans le','dans la']
+			decorator=['de', 'du','le','la','les','de la', 'celles? de la','celui du', 'ceux du','dans','dans le','dans la', "l'"]
 		if len(decorator) != 0:
 			prefix = '(?:'+'|'.join(decorator)+')*\s*'
 		else:
@@ -146,7 +146,7 @@ class automation(object):
 		if keepcontext:
 			if escapecontext == False:
 				escapecontext = '(abandonne|oublie|tais toi|tg|ta gueule|arrete)'
-				rule['escapeout'] = 'jarrete'
+				rule['escapeout'] = "j'arrête"
 			try: 
 				p = re.compile(escapecontext, re.IGNORECASE)
 				rule['escapecontext'] = p

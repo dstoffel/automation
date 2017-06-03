@@ -4,15 +4,20 @@ from os import system
 plays=[]
 interrupted=False
 import threading
+import config
+import bose
 
 def _play(msg,w=False):
 	if config.play:
-		if w != False:
-			p = 'aplay -D %s -q %s' % (config.pcard, w)
-			system(p)
+		if bose:
+			bose.play('salon', msg)
 		else:
-			p = 'aplay -D %s -q /tmp/out.wav' % config.pcard
-			system('/usr/bin/pico2wave -l fr-FR --wave /tmp/out.wav "'+msg+'" && '+p+' && rm /tmp/out.wav')
+			if w != False:
+				p = 'aplay -D %s -q %s' % (config.pcard, w)
+				system(p)
+			else:
+				p = 'aplay -D %s -q /tmp/out.wav' % config.pcard
+				system('/usr/bin/pico2wave -l fr-FR --wave /tmp/out.wav "'+msg+'" && '+p+' && rm /tmp/out.wav')
 
 def _l(s):
 	if config.play:
@@ -173,8 +178,8 @@ if __name__ == '__main__':
                 try:
                         module = __import__(plugin)
                         _plugins[plugin] = eval('module.'+plugin+'()')
-                        _automation.log('Rules loaded : %s' % len(_plugins[plugin].rules))
                         _automation.debug("Rules : \n%s" % pprint.PrettyPrinter(indent=4).pformat(_plugins[plugin].rules))
+                        _automation.log('Rules loaded : %s' % len(_plugins[plugin].rules))
                         loaded.append(plugin)
                         _automation.log('Plugin %s loaded' % plugin)
                 except Exception, e:
