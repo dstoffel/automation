@@ -47,25 +47,14 @@ def play(room, msg):
 		gen(msg)
 
 	system('cp -f %s /var/tmp/minidlna/Music/in.wav -f' % cache[msg])
-
-	r = _req(room, 'key', data='<key state="press" sender="Gabbo">PRESET_6</key>')
-	r = _req(room, 'key', data='<key state="release" sender="Gabbo">PRESET_6</key>')
+	sendkey(room, 'PRESET_6')
 	wait2finish(room)
 	volume(room, previous_volume)
-	if previous_source != 'STANDBY' and previous_source != 'INVALID_SOURCE' and 'PLAY' in previous_state:
-		_req(room, 'key', data='<key state="press" sender="Gabbo">PRESET_%s</key>' % previous_pid)
-		_req(room, 'key', data='<key state="release" sender="Gabbo">PRESET_%s</key>' % previous_pid)
-		if not 'PLAY' in previous_state:
+	if previous_source != 'STANDBY' and previous_source != 'INVALID_SOURCE':
+		sendkey(room, 'PRESET_%s' % previous_pid)
+		if not 'PLAY' in previous_state and not 'BUFFERING' in previous_state:
 			wait4play(room)
-			_req(room, 'key', data='<key state="press" sender="Gabbo">STOP</key>')
-			_req(room, 'key', data='<key state="release" sender="Gabbo">STOP</key>')
-	else:
-		if previous_source != 'STANDBY' and previous_source != 'INVALID_SOURCE':
-			_req(room, 'key', data='<key state="press" sender="Gabbo">PRESET_%s</key>' % previous_pid)
-			_req(room, 'key', data='<key state="release" sender="Gabbo">PRESET_%s</key>' % previous_pid)
-			wait4play(room)
-			_req(room, 'key', data='<key state="press" sender="Gabbo">STOP</key>')
-			_req(room, 'key', data='<key state="release" sender="Gabbo">STOP</key>')
+			sendkey(room, 'STOP')
 
 	_a.debug('done')
 
@@ -127,6 +116,7 @@ def get_current_status(room):
 	""" return (PRESET_ID,SOURCE,VOLUME,PLAYING_STATE) """
 	_a.debug('getting status for room %s' % room)
 	nowplay = _req(room, 'now_playing')
+	_a.debug(nowplay.toxml())
 	e = nowplay.getElementsByTagName('ContentItem')[0]
 	current_source = e.attributes['source'].value
 	if current_source == 'STANDBY':
@@ -139,13 +129,21 @@ def get_current_status(room):
 			current_state = 'PAUSE_STATE'
 		else:
 			current_location = e.attributes['location'].value
+			_a.debug('current location %s' % current_location)
 			current_state = nowplay.getElementsByTagName('playStatus')[0].firstChild.nodeValue
+			if current_state == 'BUFFERING_STATE' and current_location == '':
+				_a.debug('location not yet returned, retrying...')
+				time.sleep(0.3)
+				return get_current_status(room) 
 			current_preset = 6
 			for i in presets.getElementsByTagName('preset'):
 				ii = i.attributes['id'].value
+				_a.debug('%s' % i.toxml())
 				if 'location="%s"' % current_location in i.toxml():
 					current_preset = ii
+					_a.debug('found preset')
 	current_volume  = volume(room)
 	_a.debug('status, PRESET_ID : %s / SOURCE : %s  / VOLUME : %s / STATE: %s' % (current_preset, current_source, current_volume, current_state))
 	return (current_preset, current_source, current_volume, current_state)
 
+get_current_status('salon')
