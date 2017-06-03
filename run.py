@@ -9,8 +9,9 @@ import bosel
 
 def _play(msg,w=False):
 	if config.play:
-		if bose:
-			bosel.play('salon', msg)
+		if config.bose:
+			threading.Thread(target=bosel.play,args=('salon',msg,)).start()
+#                      bose.play('salon', msg)
 		else:
 			if w != False:
 				p = 'aplay -D %s -q %s' % (config.pcard, w)
@@ -95,7 +96,10 @@ class HTTPHandler(BaseHTTPServer.BaseHTTPRequestHandler):
 				clients[client] = result['cid']
 
 			if config.play:
-				play(result['out'])
+				if config.bose:
+					_play(result['out'])
+				else:
+					play(result['out'])
                         output  = json.dumps(result)
                         content_type = 'application/json'
                         _automation.debug('Returning ouput: %s' % output)
@@ -192,7 +196,8 @@ if __name__ == '__main__':
         _automation.log('Plugins loaded : %s ' % ', '.join(loaded))
 
 	if config.play  == True:
-		threading.Thread(target=player).start()
+		if not config.bose:
+			threading.Thread(target=player).start()
 
 	if config.record ==  True:
 		import snowboydecoder
