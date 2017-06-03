@@ -34,6 +34,10 @@ def gen(msg):
 	with open(cache_index,'w') as o:
 		json.dump(cache, o)
 
+def sendkey(room, key):
+	_req(room, 'key', data='<key state="press" sender="Gabbo">%s</key>' % key)
+	_req(room, 'key', data='<key state="release" sender="Gabbo">%s</key>' % key)
+
 def play(room, msg):
 	global _a,cache
 	msg = msg.lower()

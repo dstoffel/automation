@@ -5,12 +5,12 @@ plays=[]
 interrupted=False
 import threading
 import config
-import bose
+import bosel
 
 def _play(msg,w=False):
 	if config.play:
 		if bose:
-			bose.play('salon', msg)
+			bosel.play('salon', msg)
 		else:
 			if w != False:
 				p = 'aplay -D %s -q %s' % (config.pcard, w)
