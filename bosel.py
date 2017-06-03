@@ -7,12 +7,11 @@ import automation
 import tempfile
 import os.path
 import json
+import config
 
 _a = automation.automation()
 _a.logprefix = 'bose'
 
-
-boses = {'salon' : '192.168.0.27'}
 
 cache_dir  = 'cache_output/'
 cache_index = cache_dir + 'cache'
@@ -71,9 +70,9 @@ def play(room, msg):
 	_a.debug('done')
 
 def _req(room, path, data=None):
-	global _a,boses
+	global _a
 
-	url = 'http://%s:8090/%s' % (boses[room], path)
+	url = 'http://%s:8090/%s' % (config.boses[room], path)
 	_a.debug('_req(%s, %s, %s)' % ( room, path, data))
 	if data == None:
 		response = requests.get(url)
